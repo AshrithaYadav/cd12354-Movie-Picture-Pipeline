@@ -60,7 +60,8 @@ jobs:
 
       - name: Update Kubeconfig
         run: aws eks update-kubeconfig --region us-east-1 --name cluster
-
+      - name: Apply Kubernetes Manifests
+        run: kubectl apply -f starter/kubernetes/
       - name: Deploy to EKS Cluster
         run: |
           kubectl rollout restart deployment frontend
