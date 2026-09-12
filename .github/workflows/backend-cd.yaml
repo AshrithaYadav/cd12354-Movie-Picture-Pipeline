@@ -64,9 +64,9 @@ jobs:
 
       - name: Deploy to EKS Cluster
         run: |
-          kubectl apply -f starter/backend/k8s/
-          kubectl rollout restart deployment backend
-          kubectl rollout status deployment backend
+              kubectl kustomize starter/backend/k8s/ | kubectl apply -f -
+              kubectl rollout restart deployment backend
+              kubectl rollout status deployment backend
 
       - name: Verify Kubernetes deployment
         run: |
