@@ -1,0 +1,80 @@
+name: Frontend Continuous Deployment
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'starter/frontend/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build, Push and Deploy to EKS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: starter/frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: starter/frontend
+        run: npm ci
+
+      - name: Run Lint
+        working-directory: starter/frontend
+        run: npm run lint
+
+      - name: Run Tests
+        working-directory: starter/frontend
+        run: npm test
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./starter/frontend
+          file: ./starter/frontend/Dockerfile
+          push: true
+          tags: 765354364542.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
+          build-args: |
+            REACT_APP_MOVIE_API_URL=http://ae481cb1cd00544558111cbffc4a037b-1623392499.us-east-1.elb.amazonaws.com
+
+      - name: Update Kubeconfig
+        run: aws eks update-kubeconfig --region us-east-1 --name cluster
+
+      - name: Deploy to EKS Cluster
+        run: |
+          kubectl rollout restart deployment frontend
+          kubectl rollout status deployment frontend
+
+      - name: Verify Kubernetes deployment
+        run: |
+          kubectl rollout status deployment/frontend --timeout=180s || true
+          echo "----- Logging - kubectl get all ---- "
+          kubectl get all
+          echo "----- Logging - kubectl describe deploy ----- "
+          kubectl describe deploy frontend
+
+      - name: Verify Frontend ECR image
+        run: |
+          echo "----- Logging - Frontend ECR Image Details ----- "
+          AWS_PAGER="" aws ecr describe-images --repository-name frontend --region us-east-1 --query 'sort_by(imageDetails,&imagePushedAt)[-1].{Tags:imageTags,Digest:imageDigest,PushedAt:imagePushedAt}' --output table
