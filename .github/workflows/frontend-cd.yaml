@@ -79,7 +79,7 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           cd starter/frontend
-          docker build --build-arg=REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build --build-arg=REACT_APP_MOVIE_API_URL=http://a02d4a4159db64e739e49ffe2f754716-2002456163.us-east-1.elb.amazonaws.com --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: Update kubeconfig
