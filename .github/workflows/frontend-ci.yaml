@@ -74,4 +74,4 @@ jobs:
         run: npm ci
 
       - name: Build Docker image
-        run: docker build --build-arg=REACT_APP_MOVIE_API_URL=http://a02d4a4159db64e739e49ffe2f754716-2002456163.us-east-1.elb.amazonaws.com --tag=mp-frontend:latest .
+        run: docker build --build-arg=REACT_APP_MOVIE_API_URL=http://a87fe39c1e1784e04a18893ec08f06e1-560122329.us-east-1.elb.amazonaws.com --tag=mp-frontend:latest .
